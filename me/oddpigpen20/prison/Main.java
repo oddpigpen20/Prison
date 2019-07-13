@@ -9,73 +9,71 @@ import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import me.oddpigpen20.prison.Economy.Economys;
+import me.oddpigpen20.prison.Economy.VaultHook;
 import me.oddpigpen20.prison.files.Messages;
 import me.oddpigpen20.prison.special.Enchants;
 import net.md_5.bungee.api.ChatColor;
-import net.milkbowl.vault.chat.Chat;
-import net.milkbowl.vault.economy.Economy;
-import net.milkbowl.vault.permission.Permission;
 
 public class Main extends JavaPlugin{
 	
+	public Messages msg;
 	public HashMap<UUID, Double> playerBank = new HashMap<>();
-	private static Economy econ = null;
-	private static Permission perms = null;
-	private static Chat chat = null;
+	private VaultHook vaultHook;
+	public Commands commands;
 	public Enchants ench = new Enchants(169);
-	private static Main plugin;
+	public static Main plugin;
 	public Economys econs;
-	public static Messages messages;
 	@Override
 	public void onEnable() {
 	
-		econs = new Economys();
+		//on start run these two voids
+		runEnable();
+	
 		
+		//Check when enabled only needed once
 	if(!this.getDataFolder().exists()) {
-		
+		getDataFolder().mkdir();
 	}
 		
 	loadEnchant();
+	
+	
+	
+	
+	
+getConfig().options().copyDefaults(true);
+	
+	
 	reloadConfig();
 	getConfig().addDefault("Worlds", "");
 	
+	}
+
+	private void instanceClasses() {
+		plugin = this;
+		econs = new Economys();
+		vaultHook = new VaultHook();
+	}
 	
-    if (!setupEconomy() ) {
-        getLogger().severe(String.format("[%s] - Disabled due to no Vault dependency found!", getDescription().getName()));
-        getServer().getPluginManager().disablePlugin(this);
-        return;
-    }
-    setupPermissions();
-    setupChat();
-}
+	public void runEnable() {
+		instanceClasses();
+		vaultHook.hook();
+		this.getCommand("Prison").setExecutor(new Commands(this));
+		this.getCommand("PrisonPick").setExecutor(new Commands(this));
+		this.getCommand("PrisonAdmin").setExecutor(new Commands(this));
+		
+		//Messages initalization
+		msg = new Messages(this);
+		
+		msg.initCustomMessage();
+		msg.getfileconfiguration();
+		msg.saveDefaultConfig();
+		
+	}
 
-private boolean setupEconomy() {
-    if (getServer().getPluginManager().getPlugin("Vault") == null) {
-        return false;
-    }
-    RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);
-    if (rsp == null) {
-        return false;
-    }
-    econ = rsp.getProvider();
-    return econ != null;
-}
-
-private boolean setupChat() {
-    RegisteredServiceProvider<Chat> rsp = getServer().getServicesManager().getRegistration(Chat.class);
-    chat = rsp.getProvider();
-    return chat != null;
-}
-
-private boolean setupPermissions() {
-    RegisteredServiceProvider<Permission> rsp = getServer().getServicesManager().getRegistration(Permission.class);
-    perms = rsp.getProvider();
-    return perms != null;
-}
 	
 	@SuppressWarnings({ "unchecked", "unlikely-arg-type" })
 	public void onDisable() {
@@ -138,29 +136,5 @@ private boolean setupPermissions() {
 		return item;
 	
 	}
-	
-	
-	
-	public void utils() {
-		if(!messages.getfile().exists()) {
-		messages = new Messages();
-		messages.create();	
-		messages.addDefault("Prefix", "&5[Prison by piggy]");
-		messages.addDefault("Help-Message", "/prison - help menu for prison!");
-		messages.addDefault("HelpAdmin", "Admin Help menu");
-		messages.addDefault("SmelterPick", "You just recived the Smelter Pick");
-		}else return;
-	}
-	 public static Economy getEconomy() {
-	        return econ;
-	    }
-	    
-	    public static Permission getPermissions() {
-	        return perms;
-	    }
-	    
-	    public static Chat getChat() {
-	        return chat;
-	    }
 }
 
